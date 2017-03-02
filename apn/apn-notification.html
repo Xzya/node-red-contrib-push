@@ -1,0 +1,498 @@
+<script type="text/javascript">
+    RED.nodes.registerType('apn-notification', {
+        category: 'push',
+        color: '#a6bbcf',
+        defaults: {
+            name: { value: "" },
+            title: { value: "" },
+            body: { value: "" },
+            action: { value: "" },
+            badge: { value: "" },
+            sound: { value: "" },
+            contentAvailable: { value: "" },
+            mutableContent: { value: "" },
+            urlArgs: { value: "" },
+            category: { value: "" },
+            expiry: { value: "* * 1 *" },
+            priority: { value: "10" },
+            payload: { value: "" }
+        },
+        inputs: 1,
+        outputs: 1,
+        icon: "apple_icon.png",
+        label: function () {
+            return this.name || "apn-notification";
+        },
+        oneditprepare: function () {
+            var that = this;
+
+            var usingAdvancedOptions = this.title || this.action ||
+                this.mutableContent || this.urlArgs || this.category
+
+            /**
+             * Advanced options
+             */
+            function setupAdvancedOptions() {
+                // show/hide advanced options
+                var showadvanced = !usingAdvancedOptions;
+                var showall = function () {
+                    showadvanced = !showadvanced;
+                    if (showadvanced) {
+                        $("#advanced-options").show();
+                        $("#advanced").html('<label for="node-advanced" style="width:200px !important"><i class="fa fa-minus-square"></i> Advanced options</label>');
+                    }
+                    else {
+                        $("#advanced-options").hide();
+                        $("#advanced").html('<label for="node-advanced" style="width:200px !important"><i class="fa fa-plus-square"></i> Advanced options ...</label>');
+                    }
+                };
+                showall();
+                $("#advanced").click(function () { showall(); });
+            }
+            setupAdvancedOptions();
+
+            /**
+             * Badge
+             */
+            function setupBadge() {
+                // enable/disable badge
+                $("#badge-type-select").change(function () {
+                    var id = $("#badge-type-select").val();
+                    $(".badge-row").hide();
+                    $("#badge-row-" + id).show();
+                })
+
+                // set spinner
+                $("#badge-count").spinner({
+                    min: 0
+                });
+
+                // if we have a saved badge count
+                var badgeCount = $("#node-input-badge").val();
+                if (badgeCount.length > 0) {
+                    // enable the badge field and set the counter
+                    $("#badge-count").val(badgeCount);
+                    $("#badge-type-select").val("enabled");
+                    $("#badge-type-select").change();
+                }
+            }
+            setupBadge();
+
+            /**
+             * Expiry
+             */
+            function setupExpiry() {
+                // populate the expiry list
+                function populateUnitField(unit, maxValue) {
+                    for (var i = 1; i <= maxValue; i++) {
+                        $("#expiry-" + unit + "-select").append($("<option>", {
+                            value: i,
+                            text: i
+                        }))
+                    }
+                }
+                populateUnitField("minutes", 60)
+                populateUnitField("hours", 24)
+                populateUnitField("days", 7)
+                populateUnitField("weeks", 4)
+
+                // show the selected unit field when selected
+                $("#expiry-unit-select").change(function () {
+                    var units = $("#expiry-unit-select").val();
+                    $(".expiry-unit").hide();
+                    $("#expiry-" + units + "-select").show();
+                })
+
+                // the expiry value will be saved as a string with a cron like format
+                // minutes hours days weeks
+                // e.g. if we wanted 2 days expiration, the string would be
+                // * * 2 *
+                function setUnitValue(unit, value) {
+                    if (value > 0) {
+                        $("#expiry-unit-select").val(unit);
+                        $("#expiry-" + unit + "-select").val(value);
+                    }
+                }
+                var expiry = $("#node-input-expiry").val();
+                var units = expiry.split(" ").map(function (unit) {
+                    return Number(unit)
+                })
+                setUnitValue("minutes", units[0])
+                setUnitValue("hours", units[1])
+                setUnitValue("days", units[2])
+                setUnitValue("weeks", units[3])
+
+                $("#expiry-unit-select").change();
+            }
+            setupExpiry();
+
+            /**
+             * URL args
+             */
+            function setupURLArgs() {
+                // resizes the value field
+                function resizeURLArgsItem(item, index) {
+                    var valueField = item.find(".node-input-urlArgs-value");
+                    valueField.typedInput("width", Math.max(item.width(), 370) - 16)
+                }
+
+                // create the editable list
+                $("#node-input-urlArgs-container").css('min-height', '150px').editableList({
+                    addItem: function (container, i, opt) {
+                        if (!opt.hasOwnProperty("value")) {
+                            opt.value = "";
+                        }
+
+                        // create row div
+                        var row = $('<div/>').appendTo(container);
+
+                        // create the value field
+                        var valueField = $('<input/>', {
+                            class: "node-input-urlArgs-value",
+                            type: "text",
+                            style: "margin-left: 5px;"
+                        }).appendTo(row).typedInput({
+                            default: 'str',
+                            types: ['str']
+                        });
+
+                        // set the value
+                        valueField.typedInput("value", opt.value);
+
+                        // resize the field
+                        resizeURLArgsItem(container)
+                    },
+                    resizeItem: resizeURLArgsItem,
+                    sortable: true,
+                    removable: true
+                })
+
+                // show/hide the url args editable list
+                function updateURLArgsOptions() {
+                    if ($("#use-urlArgs").is(':checked')) {
+                        $("#node-row-urlArgs").show();
+                    } else {
+                        $("#node-row-urlArgs").hide();
+                    }
+                }
+                $("#use-urlArgs").prop("checked", that.urlArgs.length > 0);
+                updateURLArgsOptions();
+
+                // show/hide on checkbox click
+                $("#use-urlArgs").on("click", function () {
+                    updateURLArgsOptions();
+                });
+
+                // add existing values
+                try {
+                    var urlArgs = JSON.parse(that.urlArgs);
+
+                    for (var i = 0; i < urlArgs.length; i++) {
+                        var arg = urlArgs[i];
+                        $("#node-input-urlArgs-container").editableList('addItem', { value: arg });
+                    }
+                } catch (err) { }
+            } // -- setupURLArgs
+            setupURLArgs()
+
+            function setupPayload() {
+                // create the editable list
+                $("#node-input-payload-container").css('min-height', '150px').editableList({
+                    addItem: function (container, i, opt) {
+                        if (!opt.hasOwnProperty("key")) {
+                            opt.key = "";
+                        }
+                        if (!opt.hasOwnProperty("value")) {
+                            opt.value = "";
+                        }
+                        if (!opt.hasOwnProperty("type")) {
+                            opt.type = "str";
+                        }
+
+                        // create row div
+                        var row = $('<div/>').appendTo(container);
+
+                        // create the key/value fields
+                        var keyField = $('<input/>', {
+                            class: "node-input-payload-key",
+                            type: "text",
+                            style: "margin-left: 5px; width: 30%"
+                        }).appendTo(row).typedInput({
+                            default: 'str',
+                            types: ['str']
+                        });
+
+                        var valueField = $('<input/>', {
+                            class: "node-input-payload-value",
+                            type: "text",
+                            style: "margin-left: 5px; width: 65%;"
+                        }).appendTo(row).typedInput({
+                            default: opt.type,
+                            types: ['str', 'num', 'bool', 'json']
+                        });
+
+                        // set the value
+                        keyField.typedInput("value", opt.key)
+                        valueField.typedInput("value", opt.value)
+
+                    },
+                    sortable: true,
+                    removable: true
+                })
+
+                // show/hide the payload editable list
+                function updatePayloadOptions() {
+                    if ($("#use-payload").is(':checked')) {
+                        $("#node-row-payload").show();
+                    } else {
+                        $("#node-row-payload").hide();
+                    }
+                }
+                $("#use-payload").prop("checked", that.payload.length > 0);
+                updatePayloadOptions();
+
+                // show/hide on checkbox click
+                $("#use-payload").on("click", function () {
+                    updatePayloadOptions();
+                });
+
+                // add existing values
+                try {
+                    var payload = JSON.parse(that.payload);
+
+                    for (var i = 0; i < payload.length; i++) {
+                        var opt = payload[i];
+                        $("#node-input-payload-container").editableList('addItem', opt);
+                    }
+                } catch (err) { }
+            } // -- setupPayload
+            setupPayload()
+
+        },
+        oneditsave: function () {
+            // save the badge count
+            if ($("#badge-type-select").val() == "enabled") {
+                $("#node-input-badge").val($("#badge-count").val());
+            } else {
+                $("#node-input-badge").val(null);
+            }
+
+            // save the url args
+            var urlArgs = [];
+            if ($("#use-urlArgs").is(':checked')) {
+                var urlArgItems = $("#node-input-urlArgs-container").editableList('items');
+                urlArgItems.each(function (i) {
+                    var value = $(this).find(".node-input-urlArgs-value").typedInput("value");
+                    urlArgs.push(value);
+                })
+            }
+            if (urlArgs.length > 0) {
+                $("#node-input-urlArgs").val(JSON.stringify(urlArgs));
+            } else {
+                $("#node-input-urlArgs").val(null);
+            }
+
+            // save the payload
+            var payload = [];
+            if ($("#use-payload").is(':checked')) {
+                var payloadItems = $("#node-input-payload-container").editableList('items');
+                payloadItems.each(function (i) {
+                    var key = $(this).find(".node-input-payload-key").typedInput("value");
+                    var value = $(this).find(".node-input-payload-value").typedInput("value");
+                    var type = $(this).find(".node-input-payload-value").typedInput("type");
+
+                    var opt = {
+                        key: key,
+                        value: value,
+                        type: type
+                    }
+
+                    payload.push(opt);
+                })
+            }
+            if (payload.length > 0) {
+                $("#node-input-payload").val(JSON.stringify(payload));
+            } else {
+                $("#node-input-payload").val(null);
+            }
+
+            // save the expiry
+            var expiry = "";
+            var units = $("#expiry-unit-select").val();
+            var value = $("#expiry-" + units + "-select").val();
+            if (units == "minutes") {
+                expiry = value + " * * *"
+            } else if (units == "hours") {
+                expiry = "* " + value + " * *"
+            } else if (units == "days") {
+                expiry = "* * " + value + " *"
+            } else if (units == "weeks") {
+                expiry = "* * * " + value
+            }
+            $("#node-input-expiry").val(expiry);
+        },
+        oneditresize: function (size) {
+            // just trigger the resize
+            $("#node-input-urlArgs-container").editableList('height', $("#node-input-urlArgs-container").height());
+        }
+    });
+
+</script>
+
+<script type="text/x-red" data-template-name="apn-notification">
+
+    <!--Message text-->
+    <div class="form-row">
+        <label for="node-input-body"><i class="fa fa-comment"></i> Text</label>
+        <input type="text" id="node-input-body">
+    </div>
+
+    <!--Sound-->
+    <div class="form-row">
+        <label for="node-input-sound"><i class="fa fa-volume-up"></i> Sound</label>
+        <select type="text" id="node-input-sound">
+            <option value="">Disabled</option>
+            <option value="default">Enabled</option>
+        </select>
+    </div>
+
+    <!--Badge-->
+    <div class="form-row">
+        <label for="badge-type-select"><i class="fa fa-certificate"></i> Badge</label>
+        <select id="badge-type-select">
+            <option value="disabled">Disabled</option>
+            <option value="enabled">Enabled</option>
+        </select>
+        <span id="badge-row-enabled" class="badge-row hidden"> Count <input id="badge-count" value="1"></span>
+        <input type="hidden" id="node-input-badge">
+    </div>
+
+    <!--Expiry-->
+    <div class="form-row">
+        <label for="node-input-expiry"><i class="fa fa-calendar"></i> Expires</label>
+        <select type="hidden" class="expiry-unit" id="expiry-minutes-select"></select>
+        <select type="hidden" class="expiry-unit" id="expiry-hours-select"></select>
+        <select type="hidden" class="expiry-unit" id="expiry-days-select"></select>
+        <select type="hidden" class="expiry-unit" id="expiry-weeks-select"></select>
+        <select type="text" id="expiry-unit-select">
+            <option value="minutes">Minutes</option>
+            <option value="hours">Hours</option>
+            <option value="days">Days</option>
+            <option value="weeks">Weeks</option>
+        </select>
+        <input type="hidden" id="node-input-expiry">
+    </div>
+
+    <!--Content available-->
+    <div class="form-row">
+        <label for="node-input-contentAvailable" class="checkbox-label"><i class="fa fa-cloud-download"></i> Content available </label>
+        <input type="checkbox" class="checkbox-input" id="node-input-contentAvailable">
+    </div>
+
+    <!--Payload-->
+    <div class="form-row">
+        <input type="checkbox" id="use-payload" class="checkbox-input">
+        <label for="use-payload" style="width: auto"> Payload</label>
+        <input type="hidden" id="node-input-payload">
+
+        <div id="node-row-payload" class="form-row node-input-payload-container-row hide">
+            <ol id="node-input-payload-container"></ol>
+        </div>
+    </div>
+
+    <!--Advanced options-->
+    <div class="form-row" id="advanced">
+    </div>
+    <div id="advanced-options">
+
+        <!--Title-->
+        <div class="form-row advanced-option">
+            <label for="node-input-title"><i class="fa fa-header"></i> Title</label>
+            <input type="text" id="node-input-title">
+        </div>
+
+        <!--Priority-->
+        <div class="form-row advanced-option">
+            <label for="node-input-priority"><i class="fa fa-exclamation"></i> Priority</label>
+            <select type="text" id="node-input-priority">
+                <option value="10">High</option>
+                <option value="5">Normal</option>
+            </select>
+        </div>
+
+        <!--Action-->
+        <div class="form-row advanced-option">
+            <label for="node-input-action"><i class="fa fa-arrow-right"></i> Action</label>
+            <input type="text" id="node-input-action">
+        </div>
+
+        <!--Category-->
+        <div class="form-row advanced-option">
+            <label for="node-input-category"><i class="fa fa-list"></i> Category</label>
+            <input type="text" id="node-input-category">
+        </div>
+
+        <!--Mutable content-->
+        <div class="form-row advanced-option">
+            <label for="node-input-mutableContent" class="checkbox-label"><i class="fa fa-pencil-square-o"></i> Mutable content </label>
+            <input type="checkbox" class="checkbox-input" id="node-input-mutableContent">
+        </div>
+
+        <!--URL Args-->
+        <div class="form-row advanced-option">
+            <input type="checkbox" id="use-urlArgs" class="checkbox-input">
+            <label for="use-urlArgs" style="width: auto"> Safari URL Args</label>
+            <input type="hidden" id="node-input-urlArgs">
+
+            <div id="node-row-urlArgs" class="form-row node-input-urlArgs-container-row hide">
+                <ol id="node-input-urlArgs-container"></ol>
+            </div>
+        </div>
+    </div>
+
+    <!--Name-->
+    <div class="form-row">
+        <label for="node-input-name"><i class="icon-tag"></i> Name</label>
+        <input type="text" id="node-input-name" placeholder="Name">
+    </div>
+</script>
+
+<style>
+    #node-input-priority,
+    #node-input-sound,
+    #badge-type-select {
+        width: 100px;
+    }
+    
+    #badge-count {
+        width: 30px;
+        display: inline-block;
+    }
+    
+    .expiry-unit {
+        width: 60px
+    }
+    
+    #expiry-unit-select {
+        width: 100px;
+        display: inline-block;
+    }
+    
+    .checkbox-input {
+        display: inline-block !important;
+        width: auto !important;
+        vertical-align: top !important;
+    }
+    
+    .checkbox-label {
+        width: auto !important;
+    }
+    
+    .advanced-option {
+        margin-left: 16px;
+    }
+</style>
+
+<script type="text/x-red" data-help-name="apn-notification">
+    <p>A notification node which holds all the apn notification properties.</p>
+</script>

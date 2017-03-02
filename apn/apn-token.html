@@ -1,0 +1,74 @@
+<script type="text/javascript">
+    RED.nodes.registerType('apn-token', {
+        category: 'config',
+        defaults: {
+            name: { value: "" },
+            key: { value: "", required: true },
+            keyId: { value: "", required: true },
+            teamId: { value: "", required: true }
+        },
+        label: function () {
+            return (!!this.name ? (this.name + " - ") : "") + this.keyId + " - " + this.teamId;
+        },
+        oneditprepare: function () {
+            var that = this;
+            this.editor = RED.editor.createEditor({
+                id: 'node-config-input-key-editor',
+                mode: 'ace/snippets/text',
+                value: $("#node-config-input-key").val(),
+                globals: {
+                    msg: true,
+                    context: true,
+                    RED: true,
+                    util: true,
+                    flow: true,
+                    global: true,
+                    console: true,
+                    Buffer: true,
+                    setTimeout: true,
+                    clearTimeout: true,
+                    setInterval: true,
+                    clearInterval: true
+                }
+            });
+            this.editor.focus();
+        },
+        oneditsave: function () {
+            $("#node-config-input-key").val(this.editor.getValue());
+            delete this.editor;
+        }
+    });
+
+</script>
+
+<script type="text/x-red" data-template-name="apn-token">
+    <div class="form-row">
+        <label for="node-config-input-key"><i class="fa fa-key"></i> Key</label>
+        <input type="hidden" id="node-config-input-key">
+    </div>
+    <div class="form-row node-text-editor-row">
+        <div style="height: 65px; min-height:65px;" class="node-text-editor" id="node-config-input-key-editor"></div>
+    </div>
+    <div class="form-row">
+        <label for="node-config-input-keyId"><i class="fa fa-key"></i> Key ID</label>
+        <input type="text" id="node-config-input-keyId">
+    </div>
+    <div class="form-row">
+        <label for="node-config-input-teamId"><i class="fa fa-users"></i> Team ID</label>
+        <input type="text" id="node-config-input-teamId">
+    </div>
+    <div class="form-row">
+        <label for="node-config-input-name"><i class="icon-tag"></i> Name</label>
+        <input type="text" id="node-config-input-name" placeholder="Name">
+    </div>
+</script>
+
+<script type="text/x-red" data-help-name="apn-token">
+    <p>Configuration for Provider Authentication Tokens.</p>
+    <ul>
+        <li><code>Key</code> - The key data</li>
+        <li><code>Key ID</code> - The ID of the key issued by Apple</li>
+        <li><code>Team ID</code> - The ID of the team associated with the provider token key</li>
+    </ul>
+    <p>APN Certificates are not supported at this moment.</p>
+</script>

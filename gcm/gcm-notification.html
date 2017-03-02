@@ -1,0 +1,326 @@
+<script type="text/javascript">
+    RED.nodes.registerType('gcm-notification', {
+        category: 'push',
+        color: '#a6bbcf',
+        defaults: {
+            name: { value: "" },
+            title: { value: "" },
+            body: { value: "" },
+            sound: { value: "" },
+            expiry: { value: "* * 1 *" },
+            priority: { value: "high" },
+            dryRun: { value: "" },
+            payload: { value: "" },
+        },
+        inputs: 1,
+        outputs: 1,
+        icon: "android_icon.png",
+        label: function () {
+            return this.name || "gcm-notification";
+        },
+        oneditprepare: function () {
+            var that = this;
+
+            var usingAdvancedOptions = this.title || this.dryRun
+
+            /**
+             * Advanced options
+             */
+            function setupAdvancedOptions() {
+                // show/hide advanced options
+                var showadvanced = !usingAdvancedOptions;
+                var showall = function () {
+                    showadvanced = !showadvanced;
+                    if (showadvanced) {
+                        $("#advanced-options").show();
+                        $("#advanced").html('<label for="node-advanced" style="width:200px !important"><i class="fa fa-minus-square"></i> Advanced options</label>');
+                    }
+                    else {
+                        $("#advanced-options").hide();
+                        $("#advanced").html('<label for="node-advanced" style="width:200px !important"><i class="fa fa-plus-square"></i> Advanced options ...</label>');
+                    }
+                };
+                showall();
+                $("#advanced").click(function () { showall(); });
+            }
+            setupAdvancedOptions();
+
+            /**
+             * Expiry
+             */
+            function setupExpiry() {
+                // populate the expiry list
+                function populateUnitField(unit, maxValue) {
+                    for (var i = 1; i <= maxValue; i++) {
+                        $("#expiry-" + unit + "-select").append($("<option>", {
+                            value: i,
+                            text: i
+                        }))
+                    }
+                }
+                populateUnitField("minutes", 60)
+                populateUnitField("hours", 24)
+                populateUnitField("days", 7)
+                populateUnitField("weeks", 4)
+
+                // show the selected unit field when selected
+                $("#expiry-unit-select").change(function () {
+                    var units = $("#expiry-unit-select").val();
+                    $(".expiry-unit").hide();
+                    $("#expiry-" + units + "-select").show();
+                })
+
+                // the expiry value will be saved as a string with a cron like format
+                // minutes hours days weeks
+                // e.g. if we wanted 2 days expiration, the string would be
+                // * * 2 *
+                function setUnitValue(unit, value) {
+                    if (value > 0) {
+                        $("#expiry-unit-select").val(unit);
+                        $("#expiry-" + unit + "-select").val(value);
+                    }
+                }
+                var expiry = $("#node-input-expiry").val();
+                var units = expiry.split(" ").map(function (unit) {
+                    return Number(unit)
+                })
+                setUnitValue("minutes", units[0])
+                setUnitValue("hours", units[1])
+                setUnitValue("days", units[2])
+                setUnitValue("weeks", units[3])
+
+                $("#expiry-unit-select").change();
+            }
+            setupExpiry();
+
+            function setupPayload() {
+                // create the editable list
+                $("#node-input-payload-container").css('min-height', '150px').editableList({
+                    addItem: function (container, i, opt) {
+                        if (!opt.hasOwnProperty("key")) {
+                            opt.key = "";
+                        }
+                        if (!opt.hasOwnProperty("value")) {
+                            opt.value = "";
+                        }
+                        if (!opt.hasOwnProperty("type")) {
+                            opt.type = "str";
+                        }
+
+                        // create row div
+                        var row = $('<div/>').appendTo(container);
+
+                        // create the key/value fields
+                        var keyField = $('<input/>', {
+                            class: "node-input-payload-key",
+                            type: "text",
+                            style: "margin-left: 5px; width: 30%"
+                        }).appendTo(row).typedInput({
+                            default: 'str',
+                            types: ['str']
+                        });
+
+                        var valueField = $('<input/>', {
+                            class: "node-input-payload-value",
+                            type: "text",
+                            style: "margin-left: 5px; width: 65%;"
+                        }).appendTo(row).typedInput({
+                            default: opt.type,
+                            types: ['str', 'num', 'bool', 'json']
+                        });
+
+                        // set the value
+                        keyField.typedInput("value", opt.key)
+                        valueField.typedInput("value", opt.value)
+
+                    },
+                    sortable: true,
+                    removable: true
+                })
+
+                // show/hide the payload editable list
+                function updatePayloadOptions() {
+                    if ($("#use-payload").is(':checked')) {
+                        $("#node-row-payload").show();
+                    } else {
+                        $("#node-row-payload").hide();
+                    }
+                }
+                $("#use-payload").prop("checked", that.payload.length > 0);
+                updatePayloadOptions();
+
+                // show/hide on checkbox click
+                $("#use-payload").on("click", function () {
+                    updatePayloadOptions();
+                });
+
+                // add existing values
+                try {
+                    var payload = JSON.parse(that.payload);
+
+                    for (var i = 0; i < payload.length; i++) {
+                        var opt = payload[i];
+                        $("#node-input-payload-container").editableList('addItem', opt);
+                    }
+                } catch (err) { }
+            } // -- setupPayload
+            setupPayload()
+
+        },
+        oneditsave: function () {
+
+            // save the payload
+            var payload = [];
+            if ($("#use-payload").is(':checked')) {
+                var payloadItems = $("#node-input-payload-container").editableList('items');
+                payloadItems.each(function (i) {
+                    var key = $(this).find(".node-input-payload-key").typedInput("value");
+                    var value = $(this).find(".node-input-payload-value").typedInput("value");
+                    var type = $(this).find(".node-input-payload-value").typedInput("type");
+
+                    var opt = {
+                        key: key,
+                        value: value,
+                        type: type
+                    }
+
+                    payload.push(opt);
+                })
+            }
+            if (payload.length > 0) {
+                $("#node-input-payload").val(JSON.stringify(payload));
+            } else {
+                $("#node-input-payload").val(null);
+            }
+
+            // save the expiry
+            var expiry = "";
+            var units = $("#expiry-unit-select").val();
+            var value = $("#expiry-" + units + "-select").val();
+            if (units == "minutes") {
+                expiry = value + " * * *"
+            } else if (units == "hours") {
+                expiry = "* " + value + " * *"
+            } else if (units == "days") {
+                expiry = "* * " + value + " *"
+            } else if (units == "weeks") {
+                expiry = "* * * " + value
+            }
+            $("#node-input-expiry").val(expiry);
+        }
+    });
+
+</script>
+
+<script type="text/x-red" data-template-name="gcm-notification">
+
+    <!--Message text-->
+    <div class="form-row">
+        <label for="node-input-body"><i class="fa fa-comment"></i> Text</label>
+        <input type="text" id="node-input-body">
+    </div>
+
+    <!--Sound-->
+    <div class="form-row">
+        <label for="node-input-sound"><i class="fa fa-volume-up"></i> Sound</label>
+        <select type="text" id="node-input-sound">
+            <option value="">Disabled</option>
+            <option value="default">Enabled</option>
+        </select>
+    </div>
+
+    <!--Expiry-->
+    <div class="form-row">
+        <label for="node-input-expiry"><i class="fa fa-calendar"></i> Expires</label>
+        <select type="hidden" class="expiry-unit" id="expiry-minutes-select"></select>
+        <select type="hidden" class="expiry-unit" id="expiry-hours-select"></select>
+        <select type="hidden" class="expiry-unit" id="expiry-days-select"></select>
+        <select type="hidden" class="expiry-unit" id="expiry-weeks-select"></select>
+        <select type="text" id="expiry-unit-select">
+            <option value="minutes">Minutes</option>
+            <option value="hours">Hours</option>
+            <option value="days">Days</option>
+            <option value="weeks">Weeks</option>
+        </select>
+        <input type="hidden" id="node-input-expiry">
+    </div>
+
+    <!--Payload-->
+    <div class="form-row">
+        <input type="checkbox" id="use-payload" class="checkbox-input">
+        <label for="use-payload" style="width: auto"> Payload</label>
+        <input type="hidden" id="node-input-payload">
+
+        <div id="node-row-payload" class="form-row node-input-payload-container-row hide">
+            <ol id="node-input-payload-container"></ol>
+        </div>
+    </div>
+
+    <!--Advanced options-->
+    <div class="form-row" id="advanced">
+    </div>
+    <div id="advanced-options">
+
+        <!--Title-->
+        <div class="form-row advanced-option">
+            <label for="node-input-title"><i class="fa fa-header"></i> Title</label>
+            <input type="text" id="node-input-title">
+        </div>
+
+        <!--Priority-->
+        <div class="form-row advanced-option">
+            <label for="node-input-priority"><i class="fa fa-exclamation"></i> Priority</label>
+            <select type="text" id="node-input-priority">
+                <option value="high">High</option>
+                <option value="normal">Normal</option>
+            </select>
+        </div>
+
+        <!--Dry Run-->
+        <div class="form-row advanced-option">
+            <label for="node-input-dryRun" class="checkbox-label"><i class="fa fa-chain-broken"></i> Dry run</label>
+            <input type="checkbox" class="checkbox-input" id="node-input-dryRun">
+        </div>
+
+    </div>
+
+    <!--Name-->
+    <div class="form-row">
+        <label for="node-input-name"><i class="icon-tag"></i> Name</label>
+        <input type="text" id="node-input-name" placeholder="Name">
+    </div>
+</script>
+
+<style>
+    #node-input-priority,
+    #node-input-sound {
+        width: 100px;
+    }
+    
+    .expiry-unit {
+        width: 60px
+    }
+    
+    #expiry-unit-select {
+        width: 100px;
+        display: inline-block;
+    }
+    
+    .checkbox-input {
+        display: inline-block !important;
+        width: auto !important;
+        vertical-align: top !important;
+    }
+    
+    .checkbox-label {
+        width: auto !important;
+    }
+    
+    .advanced-option {
+        margin-left: 16px;
+    }
+</style>
+
+<script type="text/x-red" data-help-name="gcm-notification">
+    <p>A notification node which holds all the gcm notification properties.</p>
+</script>

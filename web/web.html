@@ -1,0 +1,56 @@
+<script type="text/javascript">
+    RED.nodes.registerType('web', {
+        category: 'push',
+        color: '#a6bbcf',
+        defaults: {
+            name: { value: "" },
+            gcmConfiguration: { value: "", type: "gcm-configuration", required: false }
+        },
+        inputs: 1,
+        outputs: 1,
+        icon: "chrome_icon.png",
+        label: function () {
+            return this.name || "web";
+        }
+    });
+
+</script>
+
+<script type="text/x-red" data-template-name="web">
+    <div class="form-row">
+        <label for="node-input-gcmConfiguration"><i class="fa fa-cog"></i> GCM Configuration</label>
+        <input type="text" id="node-input-gcmConfiguration">
+    </div>
+    <div class="form-row">
+        <label for="node-input-name"><i class="icon-tag"></i> Name</label>
+        <input type="text" id="node-input-name" placeholder="Name">
+    </div>
+</script>
+
+<script type="text/x-red" data-help-name="web">
+    <p>Node for sending web notifications</p>
+    <p>You can use a <code>web-notification</code> node or you can manually set the notification properties in the <code>msg.notification</code>        object. </p>
+    <p>For a list of supported browsers, as well as more information, take a look at the <a href="https://github.com/web-push-libs/web-push">web-push</a>        page and also <a href="https://jakearchibald.github.io/isserviceworkerready/">here</a>.</p>
+    <p>The device tokens must be provided in the <code>msg.tokens</code> object and they must contain the endpoint, as well as
+        the p256dh and the auth keys.</p>
+    <p>E.g.:</p>
+    <pre>msg.tokens = [
+    {
+        endpoint: "https://android.googleapis.com/gcm/send/&lt;SOME_LONG_TOKEN&gt;",
+        keys: {
+            p256dh: "&lt;P256DH_KEY&gt;",
+            auth: "&lt;AUTH_KEY&gt;"
+        }
+    },
+    {
+        endpoint: "https://updates.push.services.mozilla.com/wpush/v1/&lt;SOME_LONG_TOKEN&gt;",
+        keys: {
+            p256dh: "&lt;P256DH_KEY&gt;",
+            auth: "&lt;AUTH_KEY&gt;"
+        }
+    }
+]</pre>
+    <p>Note: some browsers are using GCM for sending the notification (e.g. Chrome, Opera), so you will need to set a GCM configuration
+        in this node</p>
+    <p>The result is returned in <code>msg.result</code>.</p>
+</script>

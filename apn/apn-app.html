@@ -1,0 +1,43 @@
+<script type="text/javascript">
+    RED.nodes.registerType('apn-app', {
+        category: 'config',
+        defaults: {
+            name: { value: "" },
+            token: { value: "", type: "apn-token", required: true },
+            topic: { value: "", required: true },
+            production: { value: false }
+        },
+        label: function () {
+            return (this.name || this.topic) + " - " + (this.production ? "Production" : "Sandbox");
+        }
+    });
+
+</script>
+
+<script type="text/x-red" data-template-name="apn-app">
+    <div class="form-row">
+        <label for="node-config-input-token"><i class="fa fa-cog"></i> APN Token</label>
+        <input type="text" id="node-config-input-token">
+    </div>
+    <div class="form-row">
+        <label for="node-config-input-topic"><i class="icon-tag"></i> Topic</label>
+        <input type="text" id="node-config-input-topic">
+    </div>
+    <div class="form-row">
+        <label for="node-config-input-production"><i class="fa fa-wrench"></i> Production</label>
+        <input type="checkbox" id="node-config-input-production" style="display: inline-block; width: auto; vertical-align: top;">
+    </div>
+    <div class="form-row">
+        <label for="node-config-input-name"><i class="icon-tag"></i> Name</label>
+        <input type="text" id="node-config-input-name" placeholder="Name">
+    </div>
+</script>
+
+<script type="text/x-red" data-help-name="apn-app">
+    <p>The configuration of an application</p>
+    <ul>
+        <li><code>APN Token</code> - Configuration for Provider Authentication Tokens</li>
+        <li><code>Topic</code> - The destination topic (bundle id) for the notification</li>
+        <li><code>Production</code> - Specifies which environment to connect to: Production (if true) or Sandbox</li>
+    </ul>
+</script>

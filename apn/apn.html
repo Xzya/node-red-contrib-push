@@ -1,0 +1,76 @@
+<script type="text/javascript">
+    RED.nodes.registerType('apn', {
+        category: 'push',
+        color: '#a6bbcf',
+        defaults: {
+            name: { value: "" },
+            app: { value: "", type: "apn-app", required: true }
+        },
+        inputs: 1,
+        outputs: 1,
+        icon: "apple_icon.png",
+        label: function () {
+            return this.name || "apn";
+        }
+    });
+
+</script>
+
+<script type="text/x-red" data-template-name="apn">
+    <div class="form-row">
+        <label for="node-input-app"><i class="fa fa-cog"></i> App</label>
+        <input type="text" id="node-input-app">
+    </div>
+    <div class="form-row">
+        <label for="node-input-name"><i class="icon-tag"></i> Name</label>
+        <input type="text" id="node-input-name" placeholder="Name">
+    </div>
+</script>
+
+<script type="text/x-red" data-help-name="apn">
+    <p>Node for sending iOS and Safari notifications</p>
+    <p>You can use an <code>apn-notification</code> node or you can manually set the notification properties in one of the following
+        ways:
+    </p>
+    <ol>
+        <li>
+            <div>
+                <p>Set the <code>msg.notification</code></p>
+                <ul>
+                    <li><code>title</code></li>
+                    <li><code>body</code></li>
+                    <li><code>sound</code></li>
+                    <li><code>badge</code></li>
+                    <li><code>action</code></li>
+                    <li><code>category</code></li>
+                    <li><code>expiry</code></li>
+                    <li><code>contentAvailable</code></li>
+                    <li><code>mutableContent</code></li>
+                    <li><code>urlArgs</code></li>
+                    <li><code>priority</code></li>
+                    <li><code>payload</code></li>
+                </ul>
+            </div>
+        </li>
+        <li>
+            <div>
+                <p>Set the <code>msg.rawNotification</code></p>
+                <p>If supplied this payload will be encoded and transmitted as-is.</p>
+                <p>E.g. </br>
+                    <pre>msg.rawNotification = {
+    from: "node-red",
+    source: "web",
+    aps: {
+        "alert":"Hello, world!"
+    }
+};</pre>
+                </p>
+                <p>For more information visit <a href="https://developer.apple.com/library/content/documentation/NetworkingInternet/Conceptual/RemoteNotificationsPG/PayloadKeyReference.html#//apple_ref/doc/uid/TP40008194-CH17-SW1">Apple's Payload Key Reference</a></p>
+                <p>Since this node uses the <a href="https://github.com/node-apn/node-apn">node-apn</a> module for sending apn
+                    notifications, you can also find more informations there.</p>
+            </div>
+        </li>
+    </ol>
+    <p>The device tokens must be provided in <code>msg.tokens</code> as an array.</p>
+    <p>The result is returned in <code>msg.result</code>.</p>
+</script>

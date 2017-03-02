@@ -1,0 +1,309 @@
+[
+    {
+        "id": "727cd3c5.76010c",
+        "type": "tab",
+        "label": "Push"
+    },
+    {
+        "id": "94c512b4.9589e",
+        "type": "apn",
+        "z": "727cd3c5.76010c",
+        "name": "Demo iOS App Prod",
+        "app": "4f846751.82f658",
+        "x": 760,
+        "y": 180,
+        "wires": [
+            [
+                "7932dc64.d623a4"
+            ]
+        ]
+    },
+    {
+        "id": "f83f93a1.5ba51",
+        "type": "apn-notification",
+        "z": "727cd3c5.76010c",
+        "name": "",
+        "title": "",
+        "body": "Hello, world!",
+        "action": "",
+        "badge": "42",
+        "sound": "default",
+        "contentAvailable": true,
+        "mutableContent": "",
+        "urlArgs": "",
+        "category": "",
+        "expiry": "* * 1 *",
+        "priority": "10",
+        "payload": "[{\"key\":\"item\",\"value\":\"37\",\"type\":\"num\"},{\"key\":\"category\",\"value\":\"2\",\"type\":\"num\"},{\"key\":\"name\",\"value\":\"Some random item\",\"type\":\"str\"}]",
+        "x": 540,
+        "y": 160,
+        "wires": [
+            [
+                "e48becf2.02004"
+            ]
+        ]
+    },
+    {
+        "id": "2144f4b0.d1633c",
+        "type": "gcm",
+        "z": "727cd3c5.76010c",
+        "name": "Demo Android App",
+        "gcmConfiguration": "4114a855.7b8bf8",
+        "x": 750,
+        "y": 240,
+        "wires": [
+            [
+                "7932dc64.d623a4"
+            ]
+        ]
+    },
+    {
+        "id": "3a0403e9.d5e4fc",
+        "type": "gcm-notification",
+        "z": "727cd3c5.76010c",
+        "name": "",
+        "title": "",
+        "body": "Hello, world!",
+        "sound": "default",
+        "expiry": "* * 1 *",
+        "priority": "high",
+        "dryRun": "",
+        "payload": "[{\"key\":\"item\",\"value\":\"37\",\"type\":\"str\"},{\"key\":\"category\",\"value\":\"2\",\"type\":\"str\"},{\"key\":\"name\",\"value\":\"Some random item\",\"type\":\"str\"}]",
+        "x": 540,
+        "y": 240,
+        "wires": [
+            [
+                "2144f4b0.d1633c"
+            ]
+        ]
+    },
+    {
+        "id": "7d0466d6.7ea788",
+        "type": "web",
+        "z": "727cd3c5.76010c",
+        "name": "",
+        "gcmConfiguration": "",
+        "x": 710,
+        "y": 300,
+        "wires": [
+            [
+                "7932dc64.d623a4"
+            ]
+        ]
+    },
+    {
+        "id": "c619e6f9.ff73b8",
+        "type": "web-notification",
+        "z": "727cd3c5.76010c",
+        "name": "",
+        "title": "",
+        "body": "Hello, world!",
+        "sound": "default",
+        "payload": "[{\"key\":\"item\",\"value\":\"37\",\"type\":\"str\"},{\"key\":\"category\",\"value\":\"2\",\"type\":\"str\"},{\"key\":\"name\",\"value\":\"Some random item\",\"type\":\"str\"}]",
+        "x": 540,
+        "y": 300,
+        "wires": [
+            [
+                "7d0466d6.7ea788"
+            ]
+        ]
+    },
+    {
+        "id": "e48becf2.02004",
+        "type": "apn",
+        "z": "727cd3c5.76010c",
+        "name": "Demo iOS App Dev",
+        "app": "4f7edc8a.cfacf4",
+        "x": 750,
+        "y": 120,
+        "wires": [
+            [
+                "7932dc64.d623a4"
+            ]
+        ]
+    },
+    {
+        "id": "7932dc64.d623a4",
+        "type": "debug",
+        "z": "727cd3c5.76010c",
+        "name": "",
+        "active": true,
+        "console": "false",
+        "complete": "result",
+        "x": 970,
+        "y": 240,
+        "wires": []
+    },
+    {
+        "id": "e5c3b331.f2a51",
+        "type": "inject",
+        "z": "727cd3c5.76010c",
+        "name": "",
+        "topic": "",
+        "payload": "",
+        "payloadType": "date",
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "x": 160,
+        "y": 120,
+        "wires": [
+            [
+                "97d5c689.6c0518"
+            ]
+        ]
+    },
+    {
+        "id": "97d5c689.6c0518",
+        "type": "function",
+        "z": "727cd3c5.76010c",
+        "name": "iOS Dev Tokens",
+        "func": "msg.tokens = [\n    \n]\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "x": 340,
+        "y": 120,
+        "wires": [
+            [
+                "f83f93a1.5ba51"
+            ]
+        ]
+    },
+    {
+        "id": "b94f107.b4396f",
+        "type": "function",
+        "z": "727cd3c5.76010c",
+        "name": "iOS Prod Tokens",
+        "func": "msg.tokens = [\n    \n]\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "x": 330,
+        "y": 180,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "5ed8262.917f0d8",
+        "type": "function",
+        "z": "727cd3c5.76010c",
+        "name": "Android Tokens",
+        "func": "msg.tokens = [\n    \n]\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "x": 340,
+        "y": 240,
+        "wires": [
+            [
+                "3a0403e9.d5e4fc"
+            ]
+        ]
+    },
+    {
+        "id": "ca5cc2ba.4f269",
+        "type": "function",
+        "z": "727cd3c5.76010c",
+        "name": "Web Tokens",
+        "func": "msg.tokens = [\n    \n]\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "x": 350,
+        "y": 300,
+        "wires": [
+            [
+                "c619e6f9.ff73b8"
+            ]
+        ]
+    },
+    {
+        "id": "6e2cf095.4ff6c",
+        "type": "inject",
+        "z": "727cd3c5.76010c",
+        "name": "",
+        "topic": "",
+        "payload": "",
+        "payloadType": "date",
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "x": 160,
+        "y": 180,
+        "wires": [
+            [
+                "b94f107.b4396f"
+            ]
+        ]
+    },
+    {
+        "id": "5f91f727.449258",
+        "type": "inject",
+        "z": "727cd3c5.76010c",
+        "name": "",
+        "topic": "",
+        "payload": "",
+        "payloadType": "date",
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "x": 160,
+        "y": 240,
+        "wires": [
+            [
+                "5ed8262.917f0d8"
+            ]
+        ]
+    },
+    {
+        "id": "2689df58.4d09",
+        "type": "inject",
+        "z": "727cd3c5.76010c",
+        "name": "",
+        "topic": "",
+        "payload": "",
+        "payloadType": "date",
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "x": 160,
+        "y": 300,
+        "wires": [
+            [
+                "ca5cc2ba.4f269"
+            ]
+        ]
+    },
+    {
+        "id": "4f846751.82f658",
+        "type": "apn-app",
+        "z": "",
+        "name": "Demo App",
+        "token": "95bf22d2.9332b",
+        "topic": "com.example.app",
+        "production": true
+    },
+    {
+        "id": "4114a855.7b8bf8",
+        "type": "gcm-configuration",
+        "z": "",
+        "name": "Demo GCM Project",
+        "apiKey": "API_KEY"
+    },
+    {
+        "id": "4f7edc8a.cfacf4",
+        "type": "apn-app",
+        "z": "",
+        "name": "Demo App",
+        "token": "95bf22d2.9332b",
+        "topic": "com.example.app",
+        "production": false
+    },
+    {
+        "id": "95bf22d2.9332b",
+        "type": "apn-token",
+        "z": "",
+        "name": "MyTeam",
+        "key": "-----BEGIN PRIVATE KEY-----\n\n-----END PRIVATE KEY-----",
+        "keyId": "KEY_ID",
+        "teamId": "TEAM_ID"
+    }
+]

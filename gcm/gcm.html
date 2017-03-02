@@ -1,0 +1,42 @@
+<script type="text/javascript">
+    RED.nodes.registerType('gcm', {
+        category: 'push',
+        color: '#a6bbcf',
+        defaults: {
+            name: { value: "" },
+            gcmConfiguration: { value: "", type: "gcm-configuration", required: true }
+        },
+        inputs: 1,
+        outputs: 1,
+        icon: "android_icon.png",
+        label: function () {
+            return this.name || "gcm";
+        }
+    });
+
+</script>
+
+<script type="text/x-red" data-template-name="gcm">
+    <div class="form-row">
+        <label for="node-input-gcmConfiguration"><i class="fa fa-cog"></i> GCM Configuration</label>
+        <input type="text" id="node-input-gcmConfiguration">
+    </div>
+    <div class="form-row">
+        <label for="node-input-name"><i class="icon-tag"></i> Name</label>
+        <input type="text" id="node-input-name" placeholder="Name">
+    </div>
+</script>
+
+<script type="text/x-red" data-help-name="gcm">
+    <p>Node for sending GCM notifications</p>
+    <p>You can use a <code>gcm-notification</code> node or you can manually set the notification properties in the <code>msg.notification</code> object. </p>
+    <p>For more information about the notification keys, take a look at the <a href="https://github.com/ToothlessGear/node-gcm">node-gcm</a> page and also at <a href="https://firebase.google.com/docs/cloud-messaging/http-server-ref#table1">Google's documentation</a></p>
+    <p>The device tokens must be provided in one of the following recipient keys:</p>
+    <ul>
+        <li><code>to</code> - A single registration token, notification key, or topic.</li>
+        <li><code>topic</code> - A single publish/subscribe topic.</li>
+        <li><code>condition</code> - Multiple topics using the <a href="https://firebase.google.com/docs/cloud-messaging/topic-messaging">condition</a> parameter.</li>
+        <li><code>registrationTokens</code> or <code>tokens</code> - A list of registration tokens. Must contain at least 1 and at most 1000 registration tokens.</li>
+    </ul>
+    <p>The result is returned in <code>msg.result</code>.</p>
+</script>
